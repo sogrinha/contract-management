@@ -96,29 +96,57 @@ const CreateRealEstate = () => {
           const response = await getRealEstateById(id);
           if (response) {
             setRealEstateData(response);
+            console.log("resposta", response);
 
-            // Buscar dados do proprietário
-            const ownerDoc = await getDoc(response.owner);
-            if (ownerDoc.exists()) {
-              const ownerData = ownerDoc.data() as Owner;
-              setSelectedOwner({
-                value: response.owner.id,
-                label: ownerData.fullName,
-              });
+            setSelectedStatus(
+              response.statusRealEstate
+                ? {
+                    value: response.statusRealEstate,
+                    label: response.statusRealEstate,
+                  }
+                : null
+            );
+            setSelectedRealEstateKind(
+              response.realEstateKind
+                ? {
+                    value: response.realEstateKind,
+                    label: response.realEstateKind,
+                  }
+                : null
+            );
+            setSelectedInspection(
+              response.hasInspection
+                ? { value: "true", label: "Sim" }
+                : { value: "false", label: "Não" }
+            );
+            setSelectedHasProofDocument(
+              response.hasProofDocument
+                ? { value: "true", label: "Sim" }
+                : { value: "false", label: "Não" }
+            );
+
+            // Buscar os dados do proprietário
+            if (response.owner) {
+              const ownerDoc = await getDoc(response.owner);
+              if (ownerDoc.exists()) {
+                const ownerData = ownerDoc.data();
+                setSelectedOwner({
+                  value: ownerDoc.id,
+                  label: ownerData.fullName,
+                });
+              }
             }
 
-            // Buscar dados do locatário (se existir)
+            // Buscar os dados do locatário (se houver)
             if (response.lessee) {
               const lesseeDoc = await getDoc(response.lessee);
               if (lesseeDoc.exists()) {
-                const lesseeData = lesseeDoc.data() as Lessee;
+                const lesseeData = lesseeDoc.data();
                 setSelectedLessee({
-                  value: response.lessee.id,
+                  value: lesseeDoc.id,
                   label: lesseeData.fullName,
                 });
               }
-            } else {
-              setSelectedLessee(null);
             }
           } else {
             toast.error("Imóvel não encontrado");
@@ -176,8 +204,10 @@ const CreateRealEstate = () => {
         ...values,
         owner: ownerRef,
         lessee: lesseeRef === null ? null : lesseeRef,
-        hasInspection: selectedInspection?.value === "true", // Apenas value como boolean
-        hasProofDocument: selectedHasProofDocument?.value === "true", // Apenas value como boolean
+        hasInspection: selectedInspection?.value === "true",
+        hasProofDocument: selectedHasProofDocument?.value === "true",
+        realEstateKind: selectedRealEstateKind?.value,
+        statusRealEstate: selectedStatus?.value,
       };
 
       if (id) {
@@ -218,6 +248,7 @@ const CreateRealEstate = () => {
           }}
           validationSchema={validationSchema}
           onSubmit={handleSubmit}
+          enableReinitialize={!!id}
         >
           {({ isSubmitting, setFieldValue, errors, touched }) => (
             <Form className="space-y-4">

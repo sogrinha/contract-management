@@ -25,7 +25,7 @@ const TopBar = () => {
       <nav className="flex space-x-8 mr-10">
         <button
           onClick={() =>
-            navigate(`${RoutesName.REAL_ESTATE}/5pNO1l1eUC3jtesWzigY`)
+            navigate(`${RoutesName.REAL_ESTATE}/bX7lZZ0kmio4eHZVkSvZ`)
           }
           className="bg-blue-500 text-white p-2 rounded"
         >

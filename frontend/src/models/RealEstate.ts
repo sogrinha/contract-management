@@ -15,12 +15,14 @@ export interface RealEstate {
   cep: string;
   note?: string;
   realEstateKind: string;
-  inspection: boolean;
+  hasInspection: boolean;
   statusRealEstate: string;
   hasProofDocument: boolean;
 
   owner: DocumentReference<Owner>;
+  ownerName?: string;
   lessee?: DocumentReference<Lessee>;
+  lesseeName?: string;
 }
 
 export function createEmptyRealEstate(
@@ -37,7 +39,7 @@ export function createEmptyRealEstate(
     number: "",
     cep: "",
     realEstateKind: "",
-    inspection: false,
+    hasInspection: false,
     statusRealEstate: "",
     hasProofDocument: false,
     owner,
