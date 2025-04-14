@@ -19,6 +19,8 @@ export interface RealEstate {
   statusRealEstate: string;
   hasProofDocument: boolean;
 
+  municipalRegistrationSearch?: string;
+
   owner: DocumentReference<Owner>;
   ownerName?: string;
   lessee?: DocumentReference<Lessee>;

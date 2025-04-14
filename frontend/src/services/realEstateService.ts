@@ -21,8 +21,14 @@ import { Lessee } from "../models/Lessee";
 
 const realEstateCollection = collection(db, "realEstates");
 
+const normalizeSearchField = (value?: string): string | undefined => {
+  if (!value) return undefined;
+  return value.toLowerCase().replace(/[^a-z0-9]/g, '');
+};
+
 // Criar um novo imóvel
 export const createRealEstate = async (realEstate: RealEstate) => {
+  realEstate.municipalRegistrationSearch = normalizeSearchField(realEstate.municipalRegistration)
   return await addDoc(realEstateCollection, realEstate);
 };
 
@@ -75,7 +81,7 @@ export const fetchRealEstates = async (
 
   // 🔵 Você pode manter filtros simples que existem direto na coleção (municipalRegistration, kind, status)
   if (filters.municipalRegistration) {
-    const normalizedRegistration = filters.municipalRegistration.toLowerCase();
+    const normalizedRegistration = normalizeSearchField(filters.municipalRegistration);
     realEstatesQuery = query(
       realEstatesQuery,
       where("municipalRegistrationSearch", ">=", normalizedRegistration),
@@ -117,11 +123,13 @@ export const fetchRealEstates = async (
       if (data.owner) {
         const ownerSnap = await getDoc(data.owner);
         ownerData = ownerSnap.exists() ? (ownerSnap.data() as Owner) : null;
+        data.ownerName = ownerData?.fullName
       }
 
       if (data.lessee) {
         const lesseeSnap = await getDoc(data.lessee);
         lesseeData = lesseeSnap.exists() ? (lesseeSnap.data() as Lessee) : null;
+        data.lesseeName = lesseeData?.fullName
       }
 
       return {

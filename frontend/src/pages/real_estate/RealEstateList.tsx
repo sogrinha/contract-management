@@ -29,7 +29,7 @@ const RealEstateList = () => {
   );
   const navigate = useNavigate();
 
-  const pageSize = 50;
+  const pageSize = 25;
 
   const options = [
     { value: "ownerName", label: "Proprietário" },
@@ -138,7 +138,7 @@ const RealEstateList = () => {
 
   return (
     <div className="bg-gray-100 p-4 min-h-screen">
-      <div className="max-w-7xl mx-auto bg-white rounded-lg shadow-md p-6">
+      <div className="max-w-9xl mx-auto bg-white rounded-lg shadow-md p-6">
         <h1 className="text-2xl font-bold mb-6">Lista de Imóveis</h1>
 
         <div className="grid grid-cols-12 gap-4 mb-6">
