@@ -23,6 +23,9 @@ export interface RealEstate {
   ownerName?: string;
   lessee?: DocumentReference<Lessee>;
   lesseeName?: string;
+
+  ownerData?: Owner | null;
+  lesseeData?: Lessee | null;
 }
 
 export function createEmptyRealEstate(

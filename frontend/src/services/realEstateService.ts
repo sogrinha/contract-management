@@ -13,8 +13,11 @@ import {
   limit,
   DocumentReference,
   getDoc,
+  QueryDocumentSnapshot,
 } from "firebase/firestore";
 import { RealEstate } from "../models/RealEstate";
+import { Owner } from "../models/Owner";
+import { Lessee } from "../models/Lessee";
 
 const realEstateCollection = collection(db, "realEstates");
 
@@ -57,46 +60,101 @@ export const deleteRealEstate = async (id: string) => {
   return await deleteDoc(realEstateDoc);
 };
 
-// Buscar imóveis com filtros e paginação
-export const getRealEstates = async (
+export const fetchRealEstates = async (
   filters: {
-    owner?: DocumentReference;
-    lessee?: DocumentReference;
-    realEstateKind?: string;
+    ownerName?: string;
+    lesseeName?: string;
     municipalRegistration?: string;
-    inspection?: boolean;
-    hasProofDocument?: boolean;
+    realEstateKind?: string;
+    statusRealEstate?: string;
   },
-  lastVisible?: any,
-  pageSize: number = 10
+  pageSize: number,
+  lastVisible: QueryDocumentSnapshot | null
 ) => {
-  let q = query(
-    realEstateCollection,
-    orderBy("municipalRegistration"),
-    limit(pageSize)
+  let realEstatesQuery = query(collection(db, "realEstates"), limit(pageSize));
+
+  // 🔵 Você pode manter filtros simples que existem direto na coleção (municipalRegistration, kind, status)
+  if (filters.municipalRegistration) {
+    const normalizedRegistration = filters.municipalRegistration.toLowerCase();
+    realEstatesQuery = query(
+      realEstatesQuery,
+      where("municipalRegistrationSearch", ">=", normalizedRegistration),
+      where(
+        "municipalRegistrationSearch",
+        "<=",
+        normalizedRegistration + "\uf8ff"
+      )
+    );
+  }
+
+  if (filters.realEstateKind) {
+    realEstatesQuery = query(
+      realEstatesQuery,
+      where("realEstateKind", "==", filters.realEstateKind)
+    );
+  }
+
+  if (filters.statusRealEstate) {
+    realEstatesQuery = query(
+      realEstatesQuery,
+      where("statusRealEstate", "==", filters.statusRealEstate)
+    );
+  }
+
+  if (lastVisible) {
+    realEstatesQuery = query(realEstatesQuery, startAfter(lastVisible));
+  }
+
+  // 🔵 Buscar imóveis
+  const querySnapshot = await getDocs(realEstatesQuery);
+
+  const realEstates = await Promise.all(
+    querySnapshot.docs.map(async (doc) => {
+      const data = doc.data() as RealEstate;
+      let ownerData: Owner | null = null;
+      let lesseeData: Lessee | null = null;
+
+      if (data.owner) {
+        const ownerSnap = await getDoc(data.owner);
+        ownerData = ownerSnap.exists() ? (ownerSnap.data() as Owner) : null;
+      }
+
+      if (data.lessee) {
+        const lesseeSnap = await getDoc(data.lessee);
+        lesseeData = lesseeSnap.exists() ? (lesseeSnap.data() as Lessee) : null;
+      }
+
+      return {
+        id: doc.id,
+        ...data,
+        ownerData,
+        lesseeData,
+      };
+    })
   );
 
-  if (filters.owner) q = query(q, where("owner", "==", filters.owner));
-  if (filters.lessee) q = query(q, where("lessee", "==", filters.lessee));
-  if (filters.realEstateKind)
-    q = query(q, where("realEstateKind", "==", filters.realEstateKind));
-  if (filters.municipalRegistration)
-    q = query(
-      q,
-      where("municipalRegistration", "==", filters.municipalRegistration)
-    );
-  if (filters.inspection !== undefined)
-    q = query(q, where("inspection", "==", filters.inspection));
-  if (filters.hasProofDocument !== undefined)
-    q = query(q, where("hasProofDocument", "==", filters.hasProofDocument));
-  if (lastVisible) q = query(q, startAfter(lastVisible));
+  // 🔵 Aplicar filtro manual de ownerName / lesseeName (porque Firestore não filtra DocumentReference)
+  const filteredRealEstates = realEstates.filter((re) => {
+    const matchesOwner = filters.ownerName
+      ? re.ownerData?.fullName
+          .toLowerCase()
+          .includes(filters.ownerName!.toLowerCase())
+      : true;
 
-  const snapshot = await getDocs(q);
-  const lastDoc = snapshot.docs[snapshot.docs.length - 1];
+    const matchesLessee = filters.lesseeName
+      ? re.lesseeData?.fullName
+          .toLowerCase()
+          .includes(filters.lesseeName!.toLowerCase())
+      : true;
+
+    return matchesOwner && matchesLessee;
+  });
+
   return {
-    data: snapshot.docs.map(
-      (doc) => ({ id: doc.id, ...doc.data() }) as RealEstate
-    ),
-    lastDoc,
+    data: filteredRealEstates,
+    lastVisible:
+      querySnapshot.docs.length > 0
+        ? querySnapshot.docs[querySnapshot.docs.length - 1]
+        : null,
   };
 };
