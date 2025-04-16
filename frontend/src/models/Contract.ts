@@ -4,6 +4,7 @@ import { Lessee } from './Lessee';
 
 export interface Contract {
   id?: string;
+  identifier?: string;
   userId: string;
   contractKind: string;
   startDate: Date;
@@ -14,7 +15,12 @@ export interface Contract {
   status: string;
 
   owner: DocumentReference<Owner>;
+  ownerName?: string;
   lessee?: DocumentReference<Lessee>;
+  lesseeName?: string;
+
+  ownerData?: Owner | null;
+  lesseeData?: Lessee | null;
 }
 //Filtro por Proprietário, locatário, data de vencimento, tipo de contrato
 

@@ -42,11 +42,9 @@ export async function getRealEstateById(
     if (realEstateSnap.exists()) {
       return { id: realEstateSnap.id, ...realEstateSnap.data() } as RealEstate;
     } else {
-      console.warn("Imóvel não encontrado.");
       return null;
     }
   } catch (error) {
-    console.error("Erro ao buscar imóvel:", error);
     return null;
   }
 }
