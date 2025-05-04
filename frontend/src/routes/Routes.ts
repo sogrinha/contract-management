@@ -1,21 +1,14 @@
-class RoutesName {
-  static readonly LOGIN = '/';
-
-  //Rotas Proprietário
-  static readonly OWNER = '/owner';
-  static readonly OWNERS = '/owners';
-
-  //Rotas Locatário
-  static readonly LESSEE = '/lessee';
-  static readonly LESSEES = '/lessees';
-
-  //Imóveis
-  static readonly REAL_ESTATE = '/real-estate';
-  static readonly REAL_ESTATES = '/real-estates';
-
-  //Rotas Contrato
-  static readonly CONTRACT = '/contract';
-  static readonly CONTRACTS = '/contracts';
-}
+const RoutesName = {
+  LOGIN: '/',
+  HOME: '/home',
+  OWNERS: '/owners',
+  OWNER: '/owner',
+  LESSEES: '/lessees',
+  LESSEE: '/lessee',
+  REAL_ESTATES: '/real-estates',
+  REAL_ESTATE: '/real-estate',
+  CONTRACTS: '/contracts',
+  CONTRACT: '/contract',
+};
 
 export default RoutesName;

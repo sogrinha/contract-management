@@ -1,6 +1,7 @@
 import { DocumentReference } from 'firebase/firestore';
 import { Owner } from './Owner';
 import { Lessee } from './Lessee';
+import { RealEstate } from './RealEstate';
 
 export interface Contract {
   id?: string;
@@ -18,9 +19,12 @@ export interface Contract {
   ownerName?: string;
   lessee?: DocumentReference<Lessee>;
   lesseeName?: string;
+  realEstate?: DocumentReference<RealEstate>;
+  realEstateAddress?: string;
 
   ownerData?: Owner | null;
   lesseeData?: Lessee | null;
+  realEstateData?: RealEstate | null;
 }
 //Filtro por Proprietário, locatário, data de vencimento, tipo de contrato
 

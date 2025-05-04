@@ -91,8 +91,8 @@ const OwnerRegistration = () => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <div className="bg-white p-8 rounded shadow-md w-4/5 my-8">
+    <div className="p-4">
+      <div className="bg-white p-8 rounded shadow-md w-4/5 mx-auto">
         <h2 className="text-2xl font-semibold mb-4 text-center">
           Cadastro de Proprietário
         </h2>
@@ -151,7 +151,7 @@ const OwnerRegistration = () => {
                 <FormField label="Número" name="number" />
                 <FormField label="Complemento" name="complement" />
               </div>
-              <div className="grid grid-cols-1">
+              <div className="grid grid-1">
                 <FormField
                   label="Observação"
                   name="note"

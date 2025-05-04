@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import logo from "../assets/imags/sogrinha_logo_text.png";
 import RoutesName from "../routes/Routes";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Home } from "lucide-react";
 
 const TopBar = () => {
   const [openMenu, setOpenMenu] = useState<string | null>(null);
@@ -18,19 +18,17 @@ const TopBar = () => {
   };
 
   return (
-    <div className="bg-myPrimary p-4 flex items-center justify-between shadow-md">
-      <Link to={RoutesName.LOGIN}>
+    <div className="bg-myPrimary p-4 flex items-center justify-between shadow-md sticky top-0 z-50">
+      <Link to={RoutesName.HOME}>
         <img src={logo} alt="Logo" className="h-8" />
       </Link>
       <nav className="flex space-x-8 mr-10">
-        <button
-          onClick={() =>
-            navigate(`${RoutesName.REAL_ESTATE}/bX7lZZ0kmio4eHZVkSvZ`)
-          }
-          className="bg-blue-500 text-white p-2 rounded"
-        >
-          Imovel Teste
-        </button>
+        {/* Link Home */}
+        <Link to={RoutesName.HOME} className="text-white flex items-center gap-1 hover:text-white">
+          <Home size={20} />
+          <span>Início</span>
+        </Link>
+
         {/* Menu Proprietários */}
         <div className="relative" ref={menuRef}>
           <button
@@ -106,6 +104,34 @@ const TopBar = () => {
               </Link>
               <Link
                 to={RoutesName.REAL_ESTATE}
+                className="block px-4 py-2 text-gray-700 hover:bg-myPrimary hover:text-white last:rounded-b-lg"
+                onClick={closeMenu}
+              >
+                Criar
+              </Link>
+            </div>
+          )}
+        </div>
+
+        {/* Menu Contratos */}
+        <div className="relative" ref={menuRef}>
+          <button
+            onClick={() => toggleMenu("Contratos")}
+            className="text-white flex items-center gap-1 hover:text-white"
+          >
+            Contratos <ChevronDown size={16} />
+          </button>
+          {openMenu === "Contratos" && (
+            <div className="absolute mt-2 w-32 bg-white shadow-lg rounded-lg z-10">
+              <Link
+                to={RoutesName.CONTRACTS}
+                className="block px-4 py-2 text-gray-700 hover:bg-myPrimary hover:text-white rounded-t-lg last:rounded-b-lg"
+                onClick={closeMenu}
+              >
+                Buscar
+              </Link>
+              <Link
+                to={RoutesName.CONTRACT}
                 className="block px-4 py-2 text-gray-700 hover:bg-myPrimary hover:text-white last:rounded-b-lg"
                 onClick={closeMenu}
               >

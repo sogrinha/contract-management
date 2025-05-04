@@ -5,9 +5,10 @@ import {
   BrowserRouter as Router,
   Routes,
 } from "react-router-dom";
-import TopBar from "../components/TopBar";
+import Layout from "../components/Layout";
 import { useAuth } from "../context/AuthContext";
 import Login from "../pages/Login";
+import Home from "../pages/Home";
 import CreateOwner from "../pages/owner/CreateOwner";
 import OwnerList from "../pages/owner/OwnerList";
 import RoutesName from "./Routes";
@@ -15,6 +16,8 @@ import CreateLessee from "../pages/lessee/CreateLessee";
 import LesseeList from "../pages/lessee/LesseeList";
 import CreateRealEstate from "../pages/real_estate/CreateRealEstate";
 import RealEstateList from "../pages/real_estate/RealEstateList";
+import CreateContract from "../pages/contract/CreateContract";
+import ContractList from "../pages/contract/ContractList";
 
 const PrivateRoute = ({ children }: { children: JSX.Element }) => {
   const { user } = useAuth();
@@ -28,17 +31,26 @@ const AppRoutes = () => {
         {/* Página de Login (pública) */}
         <Route path={RoutesName.LOGIN} element={<Login />} />
 
-        {/* Rotas privadas (somente usuários autenticados podem acessar) */}
+        {/* Página Inicial */}
+        <Route
+          path={RoutesName.HOME}
+          element={
+            <PrivateRoute>
+              <Layout>
+                <Home />
+              </Layout>
+            </PrivateRoute>
+          }
+        />
 
         {/* Criar Proprietário */}
         <Route
           path={`${RoutesName.OWNER}/:id?`}
           element={
             <PrivateRoute>
-              <>
-                <TopBar />
+              <Layout>
                 <CreateOwner />
-              </>
+              </Layout>
             </PrivateRoute>
           }
         />
@@ -47,10 +59,9 @@ const AppRoutes = () => {
           path={RoutesName.OWNERS}
           element={
             <PrivateRoute>
-              <>
-                <TopBar />
+              <Layout>
                 <OwnerList />
-              </>
+              </Layout>
             </PrivateRoute>
           }
         />
@@ -60,10 +71,9 @@ const AppRoutes = () => {
           path={`${RoutesName.LESSEE}/:id?`}
           element={
             <PrivateRoute>
-              <>
-                <TopBar />
+              <Layout>
                 <CreateLessee />
-              </>
+              </Layout>
             </PrivateRoute>
           }
         />
@@ -72,10 +82,9 @@ const AppRoutes = () => {
           path={RoutesName.LESSEES}
           element={
             <PrivateRoute>
-              <>
-                <TopBar />
+              <Layout>
                 <LesseeList />
-              </>
+              </Layout>
             </PrivateRoute>
           }
         />
@@ -85,28 +94,49 @@ const AppRoutes = () => {
           path={`${RoutesName.REAL_ESTATE}/:id?`}
           element={
             <PrivateRoute>
-              <>
-                <TopBar />
+              <Layout>
                 <CreateRealEstate />
-              </>
+              </Layout>
             </PrivateRoute>
           }
         />
-        {/* Listar locatario */}
+        {/* Listar Imóveis */}
         <Route
           path={RoutesName.REAL_ESTATES}
           element={
             <PrivateRoute>
-              <>
-                <TopBar />
+              <Layout>
                 <RealEstateList />
-              </>
+              </Layout>
             </PrivateRoute>
           }
         />
 
-        {/* Redireciona para login se a rota não existir */}
-        <Route path="*" element={<Navigate to={RoutesName.LOGIN} />} />
+        {/* Criar Contrato */}
+        <Route
+          path={`${RoutesName.CONTRACT}/:id?`}
+          element={
+            <PrivateRoute>
+              <Layout>
+                <CreateContract />
+              </Layout>
+            </PrivateRoute>
+          }
+        />
+        {/* Listar Contratos */}
+        <Route
+          path={RoutesName.CONTRACTS}
+          element={
+            <PrivateRoute>
+              <Layout>
+                <ContractList />
+              </Layout>
+            </PrivateRoute>
+          }
+        />
+
+        {/* Redireciona para o dashboard se a rota não existir */}
+        <Route path="*" element={<Navigate to={RoutesName.HOME} />} />
       </Routes>
     </Router>
   );

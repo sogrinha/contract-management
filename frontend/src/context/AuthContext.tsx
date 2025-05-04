@@ -10,18 +10,40 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(() => {
+    const savedUser = localStorage.getItem('authUser');
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
+      if (currentUser) {
+        // Salva apenas os dados necessários do usuário
+        const userData = {
+          uid: currentUser.uid,
+          email: currentUser.email,
+          displayName: currentUser.displayName,
+          photoURL: currentUser.photoURL,
+        };
+        localStorage.setItem('authUser', JSON.stringify(userData));
+        setUser(currentUser);
+      } else {
+        localStorage.removeItem('authUser');
+        setUser(null);
+      }
     });
+
     return () => unsubscribe();
   }, []);
 
   const logout = async () => {
-    await signOut(auth);
-    setUser(null);
+    try {
+      await signOut(auth);
+      localStorage.removeItem('authUser');
+      setUser(null);
+    } catch (error) {
+      console.error('Erro ao fazer logout:', error);
+    }
   };
 
   return (

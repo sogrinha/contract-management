@@ -109,16 +109,9 @@ const LesseeList = () => {
   };
 
   return (
-    <div className="bg-gray-100 p-4 min-h-screen">
-      <style>
-        {`
-          select option:hover {
-            background-color: pink !important;
-          }
-        `}
-      </style>
-      <div className="max-w-6xl mx-auto bg-white rounded-lg shadow-md p-6">
-        <h1 className="text-2xl font-bold mb-4">Lista de Locatários</h1>
+    <div className="p-4">
+      <div className="max-w-9xl mx-auto bg-white rounded-lg shadow-md p-6">
+        <h1 className="text-2xl font-bold mb-6">Lista de Locatários</h1>
         <div className="items-center mb-4 grid grid-cols-12 gap-2">
           <input
             type="text"

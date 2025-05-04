@@ -6,13 +6,20 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { getAuthErrorMessage } from '../utils/FirebaseAuthErrors';
 import logo from '../assets/imags/sogrinha_logo.png';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 import RoutesName from '../routes/Routes';
+import { useAuth } from '../context/AuthContext';
 
 import '../styles/inputStyles.css';
 
 const Login = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  // Se já estiver autenticado, redireciona para a página inicial
+  if (user) {
+    return <Navigate to={RoutesName.HOME} replace />;
+  }
 
   const validationSchema = Yup.object().shape({
     email: Yup.string().email('Email inválido').required('Email é obrigatório'),
@@ -29,7 +36,7 @@ const Login = () => {
       const { email, password } = values;
       await signInWithEmailAndPassword(auth, email, password);
       toast.success('Login realizado com sucesso!');
-      navigate(RoutesName.OWNER);
+      navigate(RoutesName.HOME);
       resetForm();
     } catch (error: any) {
       const errorMessage = getAuthErrorMessage(error);
@@ -45,8 +52,7 @@ const Login = () => {
         <div className="flex justify-center mb-2">
           <img src={logo} alt="Logo" className="w-32 h-32 object-contain" />
         </div>
-        <h2 className="text-2xl font-semibold mb-4 text-left">Login</h2>{' '}
-        {/* Centraliza o título */}
+        <h2 className="text-2xl font-semibold mb-4 text-left">Login</h2>
         <Formik
           initialValues={{ email: '', password: '' }}
           validationSchema={validationSchema}
