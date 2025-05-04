@@ -49,8 +49,8 @@ const Login = () => {
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <div className="bg-white p-8 rounded shadow-md w-96">
-        <div className="flex justify-center mb-2">
-          <img src={logo} alt="Logo" className="w-32 h-32 object-contain" />
+        <div className="flex justify-center mb-4">
+          <img src={logo} alt="Logo" className="w-48 h-48 object-contain" />
         </div>
         <h2 className="text-2xl font-semibold mb-4 text-left">Login</h2>
         <Formik

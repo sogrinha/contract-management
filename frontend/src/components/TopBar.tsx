@@ -2,19 +2,32 @@ import { useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import logo from "../assets/imags/sogrinha_logo_text.png";
 import RoutesName from "../routes/Routes";
-import { ChevronDown, Home } from "lucide-react";
+import { ChevronDown, Home, LogOut } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
+import { toast } from "react-toastify";
 
 const TopBar = () => {
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const { logout } = useAuth();
+  const navigate = useNavigate();
 
   const toggleMenu = (menu: string) => {
     setOpenMenu(openMenu === menu ? null : menu);
   };
-  const navigate = useNavigate();
 
   const closeMenu = () => {
     setOpenMenu(null);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      toast.success("Logout realizado com sucesso!");
+      navigate(RoutesName.LOGIN);
+    } catch (error) {
+      toast.error("Erro ao fazer logout. Tente novamente.");
+    }
   };
 
   return (
@@ -22,7 +35,8 @@ const TopBar = () => {
       <Link to={RoutesName.HOME}>
         <img src={logo} alt="Logo" className="h-8" />
       </Link>
-      <nav className="flex space-x-8 mr-10">
+
+      <nav className="flex items-center space-x-6">
         {/* Link Home */}
         <Link to={RoutesName.HOME} className="text-white flex items-center gap-1 hover:text-white">
           <Home size={20} />
@@ -140,6 +154,15 @@ const TopBar = () => {
             </div>
           )}
         </div>
+
+        {/* Botão de Logout */}
+        <button
+          onClick={handleLogout}
+          className="text-white flex items-center gap-1 hover:text-white hover:bg-pink-700 px-3 py-1 rounded-md transition-colors"
+        >
+          <LogOut size={20} />
+          <span>Sair</span>
+        </button>
       </nav>
     </div>
   );
