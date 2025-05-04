@@ -363,13 +363,13 @@ const CreateContract = () => {
                 </div>
               </div>
 
-              <div className="flex justify-end mt-6">
+              <div className="mt-8">
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:bg-blue-300"
+                  className="w-full bg-myPrimary text-white py-2 rounded hover:bg-opacity-90 focus:outline-none"
                 >
-                  {isSubmitting ? "Salvando..." : "Salvar"}
+                  {isSubmitting ? "Salvando..." : "Salvar Contrato"}
                 </button>
               </div>
             </Form>

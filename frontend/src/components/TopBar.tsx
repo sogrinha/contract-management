@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import logo from "../assets/imags/sogrinha_logo_text.png";
 import RoutesName from "../routes/Routes";
@@ -8,9 +8,20 @@ import { toast } from "react-toastify";
 
 const TopBar = () => {
   const [openMenu, setOpenMenu] = useState<string | null>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
+  const navRef = useRef<HTMLElement | null>(null);
   const { logout } = useAuth();
   const navigate = useNavigate();
+
+  // Fecha o menu quando clicar fora
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (navRef.current && !navRef.current.contains(event.target as Node)) {
+        setOpenMenu(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const toggleMenu = (menu: string) => {
     setOpenMenu(openMenu === menu ? null : menu);
@@ -36,7 +47,7 @@ const TopBar = () => {
         <img src={logo} alt="Logo" className="h-8" />
       </Link>
 
-      <nav className="flex items-center space-x-6">
+      <nav ref={navRef} className="flex items-center space-x-6">
         {/* Link Home */}
         <Link to={RoutesName.HOME} className="text-white flex items-center gap-1 hover:text-white">
           <Home size={20} />
@@ -44,7 +55,7 @@ const TopBar = () => {
         </Link>
 
         {/* Menu Proprietários */}
-        <div className="relative" ref={menuRef}>
+        <div className="relative">
           <button
             onClick={() => toggleMenu("Proprietários")}
             className="text-white flex items-center gap-1 hover:text-white"
@@ -72,7 +83,7 @@ const TopBar = () => {
         </div>
 
         {/* Menu Locatários */}
-        <div className="relative" ref={menuRef}>
+        <div className="relative">
           <button
             onClick={() => toggleMenu("Locatários")}
             className="text-white flex items-center gap-1 hover:text-white"
@@ -100,7 +111,7 @@ const TopBar = () => {
         </div>
 
         {/* Menu Imóveis */}
-        <div className="relative" ref={menuRef}>
+        <div className="relative">
           <button
             onClick={() => toggleMenu("Imóveis")}
             className="text-white flex items-center gap-1 hover:text-white"
@@ -128,7 +139,7 @@ const TopBar = () => {
         </div>
 
         {/* Menu Contratos */}
-        <div className="relative" ref={menuRef}>
+        <div className="relative">
           <button
             onClick={() => toggleMenu("Contratos")}
             className="text-white flex items-center gap-1 hover:text-white"

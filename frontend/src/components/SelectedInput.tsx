@@ -31,15 +31,15 @@ const SelectInput: React.FC<SelectInputProps> = ({
           ...base,
           padding: "0.09rem 0.08rem",
           borderWidth: isFocused ? "3px" : "1px",
-          borderColor: isFocused ? "#b9335b" : "#FFF",
-          "&:hover": { borderColor: isFocused ? "#b9335b" : "fff" },
+          borderColor: isFocused ? "#802f58" : "#FFF",
+          "&:hover": { borderColor: isFocused ? "#802f58" : "fff" },
           outline: "none",
           boxShadow: "none",
         }),
         menu: (base) => ({ ...base, zIndex: 9999 }),
         option: (base, { isFocused }) => ({
           ...base,
-          backgroundColor: isFocused ? "#b9335b" : "white",
+          backgroundColor: isFocused ? "#802f58" : "white",
           color: isFocused ? "white" : "black",
         }),
       }}
