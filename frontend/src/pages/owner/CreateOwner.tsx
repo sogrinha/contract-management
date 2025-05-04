@@ -19,6 +19,7 @@ import { EMaritalStatus } from '../../models/Enums/EMaritalStatus';
 import { useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { createEmptyOwner, Owner } from '../../models/Owner';
+import { FileUpload } from "../../components/FileUpload";
 
 const OwnerRegistration = () => {
   const { user } = useAuth();
@@ -239,6 +240,19 @@ const OwnerRegistration = () => {
           )}
         </Formik>
         <ToastContainer position="top-right" autoClose={1500} />
+      </div>
+
+      <div className="mt-8">
+        <h2 className="text-lg font-semibold mb-4">Documentos</h2>
+        {ownerData.id && (
+          <FileUpload
+            entityType="owners"
+            entityId={ownerData.id}
+            onUploadComplete={(file) => {
+              toast.success('Documento enviado com sucesso!');
+            }}
+          />
+        )}
       </div>
     </div>
   );

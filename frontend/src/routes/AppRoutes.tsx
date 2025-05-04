@@ -8,7 +8,7 @@ import {
 import Layout from "../components/Layout";
 import { useAuth } from "../context/AuthContext";
 import Login from "../pages/Login";
-import Home from "../pages/Home";
+import HomePage from "../pages/Home";
 import CreateOwner from "../pages/owner/CreateOwner";
 import OwnerList from "../pages/owner/OwnerList";
 import RoutesName from "./Routes";
@@ -37,7 +37,7 @@ const AppRoutes = () => {
           element={
             <PrivateRoute>
               <Layout>
-                <Home />
+                <HomePage />
               </Layout>
             </PrivateRoute>
           }

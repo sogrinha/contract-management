@@ -18,6 +18,7 @@ import {
 } from "firebase/firestore";
 import { Contract, EContractKind, EStatus } from "../models/Contract";
 import { RealEstate } from "../models/RealEstate";
+import * as XLSX from 'xlsx';
 
 const contractCollection = collection(db, "contracts");
 
@@ -174,5 +175,121 @@ function getContractKindAbbreviation(contractKind: string): string {
       return "ALG";
     default:
       return "UNK";
+  }
+}
+
+export async function exportContractsToExcel(
+  collectionName: string = 'contracts'
+): Promise<void> {
+  try {
+    const contractsCollection = collection(db, collectionName);
+    const querySnapshot = await getDocs(contractsCollection);
+
+    const contracts: Contract[] = [];
+    querySnapshot.forEach((doc) => {
+      const data = doc.data();
+      contracts.push({
+        id: doc.id,
+        ...data,
+        startDate: data.startDate.toDate?.() || data.startDate,
+        endDate: data.endDate.toDate?.() || data.endDate,
+      } as Contract);
+    });
+
+    // Converter os dados para um formato adequado para o Excel
+    const data = await Promise.all(contracts.map(async (contract) => {
+      const {
+        owner,
+        lessee,
+        realEstate,
+        ownerData,
+        lesseeData,
+        realEstateData,
+        ...contractData
+      } = contract;
+
+      // Buscar dados do proprietário
+      let ownerInfo = { fullName: '', cpf: '' };
+      if (owner) {
+        const ownerDoc = await getDoc(owner);
+        if (ownerDoc.exists()) {
+          const ownerData = ownerDoc.data();
+          ownerInfo = {
+            fullName: ownerData.fullName || '',
+            cpf: ownerData.cpf || ''
+          };
+        }
+      }
+
+      // Buscar dados do locatário
+      let lesseeInfo = { fullName: '', cpf: '' };
+      if (lessee) {
+        const lesseeDoc = await getDoc(lessee);
+        if (lesseeDoc.exists()) {
+          const lesseeData = lesseeDoc.data();
+          lesseeInfo = {
+            fullName: lesseeData.fullName || '',
+            cpf: lesseeData.cpf || ''
+          };
+        }
+      }
+
+      // Buscar dados do imóvel
+      let realEstateInfo = { address: '', registration: '' };
+      if (realEstate) {
+        const realEstateDoc = await getDoc(realEstate);
+        if (realEstateDoc.exists()) {
+          const realEstateData = realEstateDoc.data() as RealEstate;
+          realEstateInfo = {
+            address: `${realEstateData.street}, ${realEstateData.number} - ${realEstateData.neighborhood}, ${realEstateData.city}/${realEstateData.state}`,
+            registration: realEstateData.municipalRegistration
+          };
+        }
+      }
+
+      return {
+        ID: contractData.id,
+        'Identificador': contractData.identifier,
+        'Tipo de Contrato': contractData.contractKind,
+        'Status': contractData.status,
+        'Data de Início': contractData.startDate.toLocaleDateString('pt-BR'),
+        'Data de Término': contractData.endDate.toLocaleDateString('pt-BR'),
+        'Dia do Pagamento': contractData.dayPayment,
+        'Valor do Pagamento': contractData.paymentValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+        'Duração (meses)': contractData.duration,
+        'Proprietário': ownerInfo.fullName,
+        'CPF do Proprietário': ownerInfo.cpf,
+        'Locatário': lesseeInfo.fullName,
+        'CPF do Locatário': lesseeInfo.cpf,
+        'Imóvel': realEstateInfo.address,
+        'Registro do Imóvel': realEstateInfo.registration
+      };
+    }));
+
+    // Criar a planilha do Excel
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Contratos');
+
+    // Gerar o arquivo Excel
+    const excelBuffer = XLSX.write(workbook, {
+      bookType: 'xlsx',
+      type: 'array'
+    });
+    const excelBlob = new Blob([excelBuffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
+
+    // Criar um link para download do arquivo
+    const url = window.URL.createObjectURL(excelBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'contratos.xlsx');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  } catch (error) {
+    console.error('Erro ao exportar contratos para Excel:', error);
+    throw error;
   }
 }

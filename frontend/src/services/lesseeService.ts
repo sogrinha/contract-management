@@ -11,7 +11,7 @@ import {
   setDoc,
   startAfter,
   where,
-} from "firebase/firestore";
+} from 'firebase/firestore';
 import { Lessee } from "../models/Lessee";
 import { db } from "./firebase";
 import * as XLSX from "xlsx";

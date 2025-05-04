@@ -1,40 +1,66 @@
-import { Line, LineChart as RechartsLineChart, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
-import { formatCurrency } from '../../utils/formatters';
+import React from 'react';
+import {
+    LineChart as RechartsLineChart,
+    Line,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Tooltip,
+    Legend,
+    ResponsiveContainer
+} from 'recharts';
 
 interface LineChartProps {
-    data: Array<{
-        [key: string]: string | number;
-    }>;
-    dataKey: string;
-    lineKey: string;
-    title?: string;
+    data: {
+        name: string;
+        value: number;
+    }[];
+    title: string;
+    color?: string;
 }
 
-const LineChart = ({ data, dataKey, lineKey, title }: LineChartProps) => {
+export const LineChart: React.FC<LineChartProps> = ({ data, title, color = '#2563eb' }) => {
     return (
-        <div className="w-full h-[300px]">
-            {title && <h3 className="text-lg font-semibold mb-4">{title}</h3>}
+        <div className="w-full h-[300px] bg-white rounded-lg shadow-md p-4">
+            <h3 className="text-lg font-semibold text-gray-700 mb-4">{title}</h3>
             <ResponsiveContainer width="100%" height="100%">
-                <RechartsLineChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                <RechartsLineChart
+                    data={data}
+                    margin={{
+                        top: 5,
+                        right: 30,
+                        left: 20,
+                        bottom: 5,
+                    }}
+                >
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey={dataKey} />
-                    <YAxis tickFormatter={(value) => formatCurrency(value)} />
-                    <Tooltip
-                        formatter={(value: number) => [formatCurrency(value), '']}
-                        labelFormatter={(label) => `${label}`}
+                    <XAxis
+                        dataKey="name"
+                        tick={{ fill: '#6B7280' }}
+                        tickLine={{ stroke: '#6B7280' }}
                     />
+                    <YAxis
+                        tick={{ fill: '#6B7280' }}
+                        tickLine={{ stroke: '#6B7280' }}
+                    />
+                    <Tooltip
+                        contentStyle={{
+                            backgroundColor: 'white',
+                            border: '1px solid #E5E7EB',
+                            borderRadius: '0.375rem',
+                        }}
+                    />
+                    <Legend />
                     <Line
                         type="monotone"
-                        dataKey={lineKey}
-                        stroke="#8884d8"
+                        dataKey="value"
+                        stroke={color}
                         strokeWidth={2}
-                        dot={{ r: 4 }}
+                        dot={{ fill: color }}
                         activeDot={{ r: 8 }}
                     />
                 </RechartsLineChart>
             </ResponsiveContainer>
         </div>
     );
-};
-
-export default LineChart; 
+}; 

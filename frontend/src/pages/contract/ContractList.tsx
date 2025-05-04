@@ -1,10 +1,14 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { fetchContracts } from "../../services/contractService"; // Crie esse service se ainda não existir
+import { fetchContracts, exportContractsToExcel } from "../../services/contractService"; // Crie esse service se ainda não existir
 import { Contract, EContractKind, EStatus } from "../../models/Contract";
 import CustomSelect from "../../components/inputs/CunstomSelect";
 import CustomModal from "../../components/CustomModal";
 import RoutesName from "../../routes/Routes";
+import { Download, FileText, FilePlus } from "lucide-react";
+import { documentService } from "../../services/documentService";
+import { toast } from "react-toastify";
+import { getDoc } from "firebase/firestore";
 
 const ContractList = () => {
   const [contracts, setContracts] = useState<Contract[]>([]);
@@ -129,38 +133,87 @@ const ContractList = () => {
     return [];
   };
 
+  const handleExport = async () => {
+    await exportContractsToExcel();
+  };
+
+  const handleGenerateDocument = async (contract: Contract, format: 'docx' | 'pdf') => {
+    try {
+      // Buscar dados relacionados ao contrato
+      const ownerDoc = await getDoc(contract.owner);
+      const owner = ownerDoc.exists() ? ownerDoc.data() : undefined;
+
+      let lessee = undefined;
+      if (contract.lessee) {
+        const lesseeDoc = await getDoc(contract.lessee);
+        lessee = lesseeDoc.exists() ? lesseeDoc.data() : undefined;
+      }
+
+      let realEstate = undefined;
+      if (contract.realEstate) {
+        const realEstateDoc = await getDoc(contract.realEstate);
+        realEstate = realEstateDoc.exists() ? realEstateDoc.data() : undefined;
+      }
+
+      if (!owner) {
+        toast.error('Dados do proprietário não encontrados');
+        return;
+      }
+
+      await documentService.generateContractDocument(
+        {
+          contract,
+          owner,
+          lessee,
+          realEstate
+        },
+        format
+      );
+
+      toast.success(`Documento ${format.toUpperCase()} gerado com sucesso!`);
+    } catch (error) {
+      console.error('Erro ao gerar documento:', error);
+      toast.error('Erro ao gerar documento. Tente novamente.');
+    }
+  };
+
   return (
     <div className="p-4">
       <div className="max-w-9xl mx-auto bg-white rounded-lg shadow-md p-6">
         <h1 className="text-2xl font-bold mb-6">Lista de Contratos</h1>
 
-        <div className="grid grid-cols-12 gap-4 mb-6">
-          <div className="col-span-12 md:col-span-5">
-            {isEnumField ? (
-              <CustomSelect
-                options={getEnumOptions()}
-                value={searchTerm}
-                onChange={(value) => setSearchTerm(value)}
-                placeholder="Selecione uma opção"
-              />
-            ) : (
-              <input
-                type={searchField === "endDate" ? "date" : "text"}
-                placeholder="Buscar..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="px-3 py-2 border rounded w-full shadow-sm focus:ring focus:border-blue-300"
-              />
-            )}
+        <div className="items-center mb-4 grid grid-cols-12 gap-2">
+          <div className="col-span-12 md:col-span-4">
+            <input
+              type="text"
+              placeholder={`Buscar por ${searchField === "ownerName" ? "Proprietário" : searchField}`}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="px-3 py-2 border rounded w-full shadow-sm focus:ring focus:border-blue-300"
+            />
           </div>
 
           <div className="col-span-12 md:col-span-4">
             <CustomSelect
               options={options}
               value={searchField}
-              onChange={handleFieldChange}
+              onChange={(value) =>
+                setSearchField(
+                  value as "ownerName" | "lesseeName" | "endDate" | "contractKind" | "status"
+                )
+              }
               placeholder="Selecione um campo"
             />
+          </div>
+
+          <div className="col-span-12 md:col-span-4 flex justify-end space-x-2">
+            <button
+              onClick={handleExport}
+              className="bg-green-500 hover:bg-green-600 active:bg-green-700 text-white p-2 rounded transition-colors duration-200 ease-in-out flex items-center"
+            >
+              <Download className="mr-2" />
+              Exportar Excel
+            </button>
           </div>
         </div>
 
@@ -201,12 +254,26 @@ const ContractList = () => {
                   </td>
                   <td className="p-3 border text-center flex justify-center gap-2">
                     <button
-                      onClick={() =>
-                        navigate(`${RoutesName.CONTRACT}/${contract.id}`)
-                      }
+                      onClick={() => navigate(`${RoutesName.CONTRACT}/${contract.id}`)}
                       className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded"
                     >
                       Editar
+                    </button>
+                    <button
+                      onClick={() => handleGenerateDocument(contract, 'docx')}
+                      className="bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-1 rounded flex items-center"
+                      title="Gerar DOCX"
+                    >
+                      <FileText className="mr-1" />
+                      DOCX
+                    </button>
+                    <button
+                      onClick={() => handleGenerateDocument(contract, 'pdf')}
+                      className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded flex items-center"
+                      title="Gerar PDF"
+                    >
+                      <FilePlus className="mr-1" />
+                      PDF
                     </button>
                     <button
                       onClick={() => handleOpenModal(contract.id ?? "")}

@@ -1,142 +1,158 @@
-import {
-    collection,
-    getDocs,
-    query,
-    where,
-    Timestamp,
-    QueryDocumentSnapshot,
-    DocumentData
-} from 'firebase/firestore';
 import { db } from './firebase';
-import { RealEstate, EStatusRealEstate } from '../models/RealEstate';
-import { Contract, EContractKind, EStatus } from '../models/Contract';
+import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
+import { EStatusRealEstate, RealEstate } from '../models/RealEstate';
+import { EStatus } from '../models/Contract';
 
-export interface HomeStats {
-    realEstate: {
-        total: number;
-        available: number;
-        leased: number;
-        sold: number;
-        underMaintenance: number;
-        occupancyRate: number;
-    };
-    financial: {
-        totalRevenue: number;
-        monthlyRevenue: number;
-        averageRent: number;
-        projectedAnnualRevenue: number;
-        revenueByMonth: Array<{
-            month: string;
-            revenue: number;
-        }>;
-    };
-    contracts: {
-        total: number;
-        active: number;
-        completed: number;
-        cancelled: number;
-        distribution: Array<{
-            type: string;
-            count: number;
-        }>;
-    };
-    propertyDistribution: Array<{
-        name: string;
-        value: number;
-    }>;
+interface DashboardData {
+    totalImoveis: number;
+    imoveisDisponiveis: number;
+    imoveisAlugados: number;
+    imoveisVendidos: number;
+    receitaMensal: number;
+    totalContratos: number;
+    taxaOcupacao: number;
+    mediaAluguel: number;
 }
 
-export async function getHomeStats(): Promise<HomeStats> {
-    try {
-        // Buscar imóveis
-        const realEstatesQuery = query(collection(db, 'realEstates'));
-        const realEstatesSnapshot = await getDocs(realEstatesQuery);
-        const realEstates = realEstatesSnapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => ({
-            id: doc.id,
-            ...doc.data()
-        })) as RealEstate[];
+interface ChartData {
+    labels: string[];
+    data: number[];
+}
 
-        // Buscar contratos
-        const contractsQuery = query(collection(db, 'contracts'));
-        const contractsSnapshot = await getDocs(contractsQuery);
-        const contracts = contractsSnapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => ({
-            id: doc.id,
-            ...doc.data()
-        })) as Contract[];
+export const homeService = {
+    async getDashboardData(): Promise<DashboardData> {
+        try {
+            // Busca imóveis
+            const imoveisRef = collection(db, 'realEstates');
+            const imoveisSnapshot = await getDocs(imoveisRef);
+            const totalImoveis = imoveisSnapshot.size;
 
-        // Calcular estatísticas de imóveis
-        const totalProperties = realEstates.length;
-        const available = realEstates.filter(re => re.statusRealEstate === EStatusRealEstate.Available).length;
-        const leased = realEstates.filter(re => re.statusRealEstate === EStatusRealEstate.Leased).length;
-        const sold = realEstates.filter(re => re.statusRealEstate === EStatusRealEstate.Sold).length;
-        const underMaintenance = realEstates.filter(re => re.statusRealEstate === 'Em Manutenção').length;
-        const occupancyRate = totalProperties > 0 ? (leased / totalProperties) * 100 : 0;
+            // Contadores por status
+            let imoveisDisponiveis = 0;
+            let imoveisAlugados = 0;
+            let imoveisVendidos = 0;
 
-        // Calcular estatísticas financeiras
-        const activeContracts = contracts.filter(c => c.status === EStatus.Active);
-        const totalRevenue = activeContracts.reduce((acc, contract) => acc + (contract.paymentValue || 0), 0);
-        const averageRent = activeContracts.length > 0 ? totalRevenue / activeContracts.length : 0;
-
-        // Calcular receita por mês (últimos 6 meses)
-        const today = new Date();
-        const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-        const revenueByMonth = Array.from({ length: 6 }, (_, i) => {
-            const month = new Date(today.getFullYear(), today.getMonth() - i, 1);
-            const monthContracts = activeContracts.filter(contract => {
-                const startDate = contract.startDate instanceof Date
-                    ? contract.startDate
-                    : (contract.startDate as unknown as Timestamp)?.toDate?.() || new Date(contract.startDate);
-                return startDate.getMonth() === month.getMonth() &&
-                    startDate.getFullYear() === month.getFullYear();
+            imoveisSnapshot.forEach((doc) => {
+                const imovel = doc.data() as RealEstate;
+                switch (imovel.statusRealEstate) {
+                    case EStatusRealEstate.Available:
+                        imoveisDisponiveis++;
+                        break;
+                    case EStatusRealEstate.Leased:
+                        imoveisAlugados++;
+                        break;
+                    case EStatusRealEstate.Sold:
+                        imoveisVendidos++;
+                        break;
+                }
             });
-            const revenue = monthContracts.reduce((acc, contract) => acc + (contract.paymentValue || 0), 0);
+
+            // Busca contratos
+            const contratosRef = collection(db, 'contratos');
+            const contratosSnapshot = await getDocs(contratosRef);
+            const totalContratos = contratosSnapshot.size;
+
+            // Calcula receita mensal (soma dos aluguéis ativos)
+            let receitaMensal = 0;
+            let somaAlugueis = 0;
+            let countAlugueis = 0;
+
+            await Promise.all(contratosSnapshot.docs.map(async (doc) => {
+                const contrato = doc.data();
+                if (contrato.status === EStatus.Active) {
+                    if (contrato.valorAluguel) {
+                        receitaMensal += contrato.valorAluguel;
+                        somaAlugueis += contrato.valorAluguel;
+                        countAlugueis++;
+                    }
+                }
+            }));
+
+            // Calcula métricas
+            const taxaOcupacao = totalImoveis > 0 ? (imoveisAlugados / totalImoveis) * 100 : 0;
+            const mediaAluguel = countAlugueis > 0 ? somaAlugueis / countAlugueis : 0;
+
             return {
-                month: monthNames[month.getMonth()],
-                revenue
+                totalImoveis,
+                imoveisDisponiveis,
+                imoveisAlugados,
+                imoveisVendidos,
+                receitaMensal,
+                totalContratos,
+                taxaOcupacao,
+                mediaAluguel
             };
-        }).reverse();
+        } catch (error) {
+            console.error('Erro ao buscar dados do dashboard:', error);
+            throw error;
+        }
+    },
 
-        // Calcular distribuição de contratos
-        const contractDistribution = Object.values(EContractKind).map(type => ({
-            type,
-            count: contracts.filter(c => c.contractKind === type).length
-        }));
+    async getContratosMensais(): Promise<ChartData> {
+        try {
+            const contratosRef = collection(db, 'contratos');
+            const contratosDocs = await getDocs(contratosRef);
 
-        // Calcular distribuição de imóveis
-        const propertyDistribution = [
-            { name: 'Disponível', value: available },
-            { name: 'Alugado', value: leased },
-            { name: 'Vendido', value: sold },
-            { name: 'Em Manutenção', value: underMaintenance }
-        ];
+            const hoje = new Date();
+            const ultimos6Meses = Array.from({ length: 6 }, (_, i) => {
+                const data = new Date();
+                data.setMonth(hoje.getMonth() - i);
+                return data;
+            }).reverse();
 
-        return {
-            realEstate: {
-                total: totalProperties,
-                available,
-                leased,
-                sold,
-                underMaintenance,
-                occupancyRate
-            },
-            financial: {
-                totalRevenue,
-                monthlyRevenue: revenueByMonth[revenueByMonth.length - 1]?.revenue || 0,
-                averageRent,
-                projectedAnnualRevenue: totalRevenue * 12,
-                revenueByMonth
-            },
-            contracts: {
-                total: contracts.length,
-                active: contracts.filter(c => c.status === EStatus.Active).length,
-                completed: contracts.filter(c => c.status === EStatus.Done).length,
-                cancelled: contracts.filter(c => c.status === EStatus.Voided).length,
-                distribution: contractDistribution
-            },
-            propertyDistribution
-        };
-    } catch (error) {
-        console.error('Erro ao buscar estatísticas:', error);
-        throw error;
+            const labels = ultimos6Meses.map(data =>
+                data.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })
+            );
+
+            const data = ultimos6Meses.map(mesRef => {
+                return contratosDocs.docs.filter(doc => {
+                    const contrato = doc.data();
+                    const dataInicio = contrato.dataInicio?.toDate();
+                    return dataInicio &&
+                        dataInicio.getMonth() === mesRef.getMonth() &&
+                        dataInicio.getFullYear() === mesRef.getFullYear();
+                }).length;
+            });
+
+            return { labels, data };
+        } catch (error) {
+            console.error('Erro ao buscar dados de contratos mensais:', error);
+            throw error;
+        }
+    },
+
+    async getReceitaMensal(): Promise<ChartData> {
+        try {
+            const contratosRef = collection(db, 'contratos');
+            const contratosDocs = await getDocs(contratosRef);
+
+            const hoje = new Date();
+            const ultimos6Meses = Array.from({ length: 6 }, (_, i) => {
+                const data = new Date();
+                data.setMonth(hoje.getMonth() - i);
+                return data;
+            }).reverse();
+
+            const labels = ultimos6Meses.map(data =>
+                data.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })
+            );
+
+            const data = ultimos6Meses.map(mesRef => {
+                return contratosDocs.docs
+                    .filter(doc => {
+                        const contrato = doc.data();
+                        return contrato.status === EStatus.Active;
+                    })
+                    .reduce((total, doc) => {
+                        const contrato = doc.data();
+                        return total + (contrato.valorAluguel || 0);
+                    }, 0);
+            });
+
+            return { labels, data };
+        } catch (error) {
+            console.error('Erro ao buscar dados de receita mensal:', error);
+            throw error;
+        }
     }
-} 
+}; 

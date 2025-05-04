@@ -28,6 +28,7 @@ import {
   getRealEstateById,
   updateRealEstate,
 } from "../../services/realEstateService";
+import { FileUpload } from "../../components/FileUpload";
 
 interface SelectOption {
   value: string;
@@ -419,6 +420,19 @@ const CreateRealEstate = () => {
           )}
         </Formik>
         <ToastContainer position="top-right" autoClose={1500} />
+      </div>
+
+      <div className="mt-8">
+        <h2 className="text-lg font-semibold mb-4">Documentos</h2>
+        {realEstateData?.id && (
+          <FileUpload
+            entityType="realEstates"
+            entityId={realEstateData.id}
+            onUploadComplete={(file) => {
+              toast.success('Documento enviado com sucesso!');
+            }}
+          />
+        )}
       </div>
     </div>
   );

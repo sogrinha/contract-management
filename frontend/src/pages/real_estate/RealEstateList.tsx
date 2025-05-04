@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { fetchRealEstates } from "../../services/realEstateService";
+import { fetchRealEstates, exportRealEstatesToExcel } from "../../services/realEstateService";
 import {
   RealEstate,
   ERealEstateKind,
@@ -136,13 +136,17 @@ const RealEstateList = () => {
     return [];
   };
 
+  const handleExport = async () => {
+    await exportRealEstatesToExcel();
+  };
+
   return (
     <div className="p-4">
       <div className="max-w-9xl mx-auto bg-white rounded-lg shadow-md p-6">
         <h1 className="text-2xl font-bold mb-6">Lista de Imóveis</h1>
 
         <div className="grid grid-cols-12 gap-4 mb-6">
-          <div className="col-span-12 md:col-span-5">
+          <div className="col-span-12 md:col-span-4">
             {isEnumField ? (
               <CustomSelect
                 options={getEnumOptions()}
@@ -168,6 +172,15 @@ const RealEstateList = () => {
               onChange={handleFieldChange}
               placeholder="Selecione um campo"
             />
+          </div>
+
+          <div className="col-span-12 md:col-span-4 flex justify-end">
+            <button
+              onClick={handleExport}
+              className="bg-green-500 hover:bg-green-600 active:bg-green-700 text-white p-2 rounded transition-colors duration-200 ease-in-out"
+            >
+              Exportar para Excel
+            </button>
           </div>
         </div>
 

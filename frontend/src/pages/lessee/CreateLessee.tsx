@@ -19,6 +19,7 @@ import { EMaritalStatus } from "../../models/Enums/EMaritalStatus";
 import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { createEmptyLessee, Lessee } from "../../models/Lessee";
+import { FileUpload } from "../../components/FileUpload";
 
 const LesseeRegistration = () => {
   const { user } = useAuth();
@@ -237,6 +238,18 @@ const LesseeRegistration = () => {
           )}
         </Formik>
         <ToastContainer position="top-right" autoClose={1500} />
+      </div>
+      <div className="mt-8">
+        <h2 className="text-lg font-semibold mb-4">Documentos</h2>
+        {lesseeData.id && (
+          <FileUpload
+            entityType="lessees"
+            entityId={lesseeData.id}
+            onUploadComplete={(file) => {
+              toast.success('Documento enviado com sucesso!');
+            }}
+          />
+        )}
       </div>
     </div>
   );

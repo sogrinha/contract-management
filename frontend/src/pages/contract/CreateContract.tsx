@@ -22,6 +22,7 @@ import { Contract, EContractKind, EStatus } from "../../models/Contract";
 import { createContract, updateContract } from "../../services/contractService";
 import RoutesName from "../../routes/Routes";
 import { useNavigate } from "react-router-dom";
+import { FileUpload } from "../../components/FileUpload";
 
 interface SelectOption {
   value: string;
@@ -375,6 +376,19 @@ const CreateContract = () => {
           )}
         </Formik>
         <ToastContainer position="top-right" autoClose={1500} />
+
+        <div className="mt-8">
+          <h2 className="text-lg font-semibold mb-4">Documentos</h2>
+          {id && (
+            <FileUpload
+              entityType="contracts"
+              entityId={id}
+              onUploadComplete={(file) => {
+                toast.success('Documento enviado com sucesso!');
+              }}
+            />
+          )}
+        </div>
       </div>
     </div>
   );

@@ -18,6 +18,7 @@ import {
 import { RealEstate } from "../models/RealEstate";
 import { Owner } from "../models/Owner";
 import { Lessee } from "../models/Lessee";
+import * as XLSX from 'xlsx';
 
 const realEstateCollection = collection(db, "realEstates");
 
@@ -143,14 +144,14 @@ export const fetchRealEstates = async (
   const filteredRealEstates = realEstates.filter((re) => {
     const matchesOwner = filters.ownerName
       ? re.ownerData?.fullName
-          .toLowerCase()
-          .includes(filters.ownerName!.toLowerCase())
+        .toLowerCase()
+        .includes(filters.ownerName!.toLowerCase())
       : true;
 
     const matchesLessee = filters.lesseeName
       ? re.lesseeData?.fullName
-          .toLowerCase()
-          .includes(filters.lesseeName!.toLowerCase())
+        .toLowerCase()
+        .includes(filters.lesseeName!.toLowerCase())
       : true;
 
     return matchesOwner && matchesLessee;
@@ -164,3 +165,102 @@ export const fetchRealEstates = async (
         : null,
   };
 };
+
+export async function exportRealEstatesToExcel(
+  collectionName: string = 'realEstates'
+): Promise<void> {
+  try {
+    const realEstatesCollection = collection(db, collectionName);
+    const querySnapshot = await getDocs(realEstatesCollection);
+
+    const realEstates: RealEstate[] = [];
+    querySnapshot.forEach((doc) => {
+      realEstates.push({ id: doc.id, ...doc.data() } as RealEstate);
+    });
+
+    // Converter os dados para um formato adequado para o Excel
+    const data = await Promise.all(realEstates.map(async (realEstate) => {
+      const {
+        municipalRegistrationSearch,
+        owner,
+        lessee,
+        ownerData,
+        lesseeData,
+        ...realEstateData
+      } = realEstate;
+
+      // Buscar dados do proprietário
+      let ownerInfo = { fullName: '', cpf: '' };
+      if (owner) {
+        const ownerDoc = await getDoc(owner);
+        if (ownerDoc.exists()) {
+          const ownerData = ownerDoc.data();
+          ownerInfo = {
+            fullName: ownerData.fullName || '',
+            cpf: ownerData.cpf || ''
+          };
+        }
+      }
+
+      // Buscar dados do locatário
+      let lesseeInfo = { fullName: '', cpf: '' };
+      if (lessee) {
+        const lesseeDoc = await getDoc(lessee);
+        if (lesseeDoc.exists()) {
+          const lesseeData = lesseeDoc.data();
+          lesseeInfo = {
+            fullName: lesseeData.fullName || '',
+            cpf: lesseeData.cpf || ''
+          };
+        }
+      }
+
+      return {
+        ID: realEstateData.id,
+        'Registro Municipal': realEstateData.municipalRegistration,
+        'Tipo de Imóvel': realEstateData.realEstateKind,
+        'Status': realEstateData.statusRealEstate,
+        'Estado': realEstateData.state,
+        'Cidade': realEstateData.city,
+        'Bairro': realEstateData.neighborhood,
+        'Rua': realEstateData.street,
+        'Número': realEstateData.number,
+        'Complemento': realEstateData.complement || '',
+        'CEP': realEstateData.cep,
+        'Possui Vistoria': realEstateData.hasInspection ? 'Sim' : 'Não',
+        'Possui Documentação': realEstateData.hasProofDocument ? 'Sim' : 'Não',
+        'Observação': realEstateData.note || '',
+        'Proprietário': ownerInfo.fullName,
+        'CPF do Proprietário': ownerInfo.cpf,
+        'Locatário': lesseeInfo.fullName,
+        'CPF do Locatário': lesseeInfo.cpf
+      };
+    }));
+
+    // Criar a planilha do Excel
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Imóveis');
+
+    // Gerar o arquivo Excel
+    const excelBuffer = XLSX.write(workbook, {
+      bookType: 'xlsx',
+      type: 'array'
+    });
+    const excelBlob = new Blob([excelBuffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
+
+    // Criar um link para download do arquivo
+    const url = window.URL.createObjectURL(excelBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'imoveis.xlsx');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  } catch (error) {
+    console.error('Erro ao exportar imóveis para Excel:', error);
+    throw error;
+  }
+}

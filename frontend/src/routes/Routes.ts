@@ -1,6 +1,6 @@
 const RoutesName = {
-  LOGIN: '/',
-  HOME: '/home',
+  LOGIN: '/login',
+  HOME: '/',
   OWNERS: '/owners',
   OWNER: '/owner',
   LESSEES: '/lessees',

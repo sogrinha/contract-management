@@ -1,225 +1,126 @@
+import React from 'react';
 import { useEffect, useState } from 'react';
-import { Building2, DollarSign, Users, Home as HomeIcon, TrendingUp, FileText } from 'lucide-react';
-import KPICard from '../components/cards/KPICard';
-import BarChart from '../components/charts/BarChart';
-import PieChart from '../components/charts/PieChart';
-import { getHomeStats, HomeStats } from '../services/homeService';
-import { formatCurrency } from '../utils/formatters';
+import { LineChart } from '../components/charts/LineChart';
+import { KPICard } from '../components/KPICard';
+import { homeService } from '../services/homeService';
+import { Building2, Wallet, Home as HomeIcon, Users, BarChart, TrendingUp } from 'lucide-react';
+
+interface DashboardData {
+    totalImoveis: number;
+    imoveisDisponiveis: number;
+    imoveisAlugados: number;
+    imoveisVendidos: number;
+    receitaMensal: number;
+    totalContratos: number;
+    taxaOcupacao: number;
+    mediaAluguel: number;
+}
 
 const HomePage = () => {
-    const [loading, setLoading] = useState(true);
-    const [stats, setStats] = useState<HomeStats | null>(null);
-    const [error, setError] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+    const [contratosMensais, setContratosMensais] = useState<{ name: string; value: number; }[]>([]);
+    const [receitaMensal, setReceitaMensal] = useState<{ name: string; value: number; }[]>([]);
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const data = await getHomeStats();
-                setStats(data);
-                setError(null);
+                setIsLoading(true);
+
+                // Busca dados do dashboard
+                const data = await homeService.getDashboardData();
+                setDashboardData(data);
+
+                // Busca dados dos gráficos
+                const contratosMensaisData = await homeService.getContratosMensais();
+                setContratosMensais(
+                    contratosMensaisData.labels.map((label, index) => ({
+                        name: label,
+                        value: contratosMensaisData.data[index]
+                    }))
+                );
+
+                const receitaMensalData = await homeService.getReceitaMensal();
+                setReceitaMensal(
+                    receitaMensalData.labels.map((label, index) => ({
+                        name: label,
+                        value: receitaMensalData.data[index]
+                    }))
+                );
             } catch (error) {
-                console.error('Erro ao carregar dados:', error);
-                setError('Erro ao carregar dados do dashboard. Por favor, tente novamente.');
+                console.error('Erro ao carregar dados do dashboard:', error);
             } finally {
-                setLoading(false);
+                setIsLoading(false);
             }
         };
 
         fetchData();
     }, []);
 
-    if (loading) {
+    if (isLoading || !dashboardData) {
         return (
-            <div className="flex items-center justify-center h-full">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-myPrimary"></div>
-            </div>
-        );
-    }
-
-    if (error || !stats) {
-        return (
-            <div className="flex items-center justify-center h-full">
-                <div className="text-red-500 text-center">
-                    <p className="text-xl font-semibold mb-2">Ops! Algo deu errado.</p>
-                    <p>{error || 'Não foi possível carregar os dados.'}</p>
-                    <button
-                        onClick={() => window.location.reload()}
-                        className="mt-4 px-4 py-2 bg-myPrimary text-white rounded hover:bg-myPrimary/90"
-                    >
-                        Tentar Novamente
-                    </button>
-                </div>
+            <div className="flex items-center justify-center min-h-screen">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
             </div>
         );
     }
 
     return (
-        <div className="p-6 space-y-6">
-            <div className="flex justify-between items-center mb-6">
+        <div className="p-6 max-w-7xl mx-auto">
+            <div className="mb-8">
                 <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
-                <div className="text-sm text-gray-500">
-                    Última atualização: {new Date().toLocaleString('pt-BR')}
-                </div>
+                <p className="text-gray-600">Visão geral do seu negócio imobiliário</p>
             </div>
 
-            {/* KPI Cards - Primeira Linha */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Grid de KPIs */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                 <KPICard
                     title="Total de Imóveis"
-                    value={stats.realEstate.total}
-                    icon={<Building2 className="w-6 h-6" />}
-                    color="blue"
-                    trend={null}
-                    trendLabel=""
-                    subtitle={`${stats.realEstate.available} disponíveis`}
+                    value={dashboardData.totalImoveis}
+                    icon={<Building2 />}
+                />
+                <KPICard
+                    title="Imóveis Disponíveis"
+                    value={dashboardData.imoveisDisponiveis}
+                    icon={<HomeIcon />}
+                />
+                <KPICard
+                    title="Imóveis Alugados"
+                    value={dashboardData.imoveisAlugados}
+                    icon={<Users />}
                 />
                 <KPICard
                     title="Receita Mensal"
-                    value={formatCurrency(stats.financial.monthlyRevenue)}
-                    icon={<DollarSign className="w-6 h-6" />}
-                    color="green"
-                    trend={8.2}
-                    trendLabel="vs. mês anterior"
-                    subtitle="vs. mês anterior"
+                    value={dashboardData.receitaMensal}
+                    isMonetary={true}
+                    icon={<Wallet />}
                 />
                 <KPICard
                     title="Taxa de Ocupação"
-                    value={`${stats.realEstate.occupancyRate.toFixed(1)}%`}
-                    icon={<Users className="w-6 h-6" />}
-                    color="yellow"
-                    trend={2.5}
-                    trendLabel="vs. mês anterior"
-                    subtitle={`${stats.realEstate.leased} imóveis alugados`}
-                />
-            </div>
-
-            {/* KPI Cards - Segunda Linha */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <KPICard
-                    title="Contratos Ativos"
-                    value={stats.contracts.active}
-                    icon={<FileText className="w-6 h-6" />}
-                    color="indigo"
-                    trend={null}
-                    trendLabel=""
-                    subtitle={`de ${stats.contracts.total} contratos`}
+                    value={dashboardData.taxaOcupacao.toFixed(1)}
+                    isPercentage={true}
+                    icon={<BarChart />}
                 />
                 <KPICard
                     title="Média de Aluguel"
-                    value={formatCurrency(stats.financial.averageRent)}
-                    icon={<HomeIcon className="w-6 h-6" />}
-                    color="purple"
-                    trend={null}
-                    trendLabel=""
-                    subtitle="por imóvel"
-                />
-                <KPICard
-                    title="Projeção Anual"
-                    value={formatCurrency(stats.financial.projectedAnnualRevenue)}
-                    icon={<TrendingUp className="w-6 h-6" />}
-                    color="pink"
-                    trend={5.8}
-                    trendLabel="vs. ano anterior"
-                    subtitle="crescimento esperado"
+                    value={dashboardData.mediaAluguel}
+                    isMonetary={true}
+                    icon={<TrendingUp />}
                 />
             </div>
 
-            {/* Gráficos */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-                <div className="bg-white p-6 rounded-lg shadow-md">
-                    <h3 className="text-lg font-semibold mb-4">Receita Mensal</h3>
-                    <BarChart
-                        data={stats.financial.revenueByMonth}
-                        dataKey="month"
-                        barKey="revenue"
-                        title=""
-                    />
-                </div>
-                <div className="bg-white p-6 rounded-lg shadow-md">
-                    <h3 className="text-lg font-semibold mb-4">Distribuição de Imóveis</h3>
-                    <PieChart
-                        data={stats.propertyDistribution}
-                        title=""
-                    />
-                </div>
-            </div>
-
-            {/* Cards de Resumo */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
-                {/* Resumo Financeiro */}
-                <div className="bg-white p-6 rounded-lg shadow-md">
-                    <h3 className="text-lg font-semibold mb-4">Resumo Financeiro</h3>
-                    <div className="space-y-4">
-                        <div className="flex justify-between items-center pb-2 border-b">
-                            <span className="text-gray-600">Receita Total (Ano)</span>
-                            <span className="font-medium">{formatCurrency(stats.financial.projectedAnnualRevenue)}</span>
-                        </div>
-                        <div className="flex justify-between items-center pb-2 border-b">
-                            <span className="text-gray-600">Média Mensal</span>
-                            <span className="font-medium">{formatCurrency(stats.financial.monthlyRevenue)}</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                            <span className="text-gray-600">Média por Imóvel</span>
-                            <span className="font-medium">{formatCurrency(stats.financial.averageRent)}</span>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Indicadores de Performance */}
-                <div className="bg-white p-6 rounded-lg shadow-md">
-                    <h3 className="text-lg font-semibold mb-4">Status dos Contratos</h3>
-                    <div className="space-y-4">
-                        <div className="flex justify-between items-center pb-2 border-b">
-                            <span className="text-gray-600">Ativos</span>
-                            <span className="font-medium text-green-600">{stats.contracts.active}</span>
-                        </div>
-                        <div className="flex justify-between items-center pb-2 border-b">
-                            <span className="text-gray-600">Concluídos</span>
-                            <span className="font-medium text-blue-600">{stats.contracts.completed}</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                            <span className="text-gray-600">Cancelados</span>
-                            <span className="font-medium text-red-600">{stats.contracts.cancelled}</span>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Metas e Objetivos */}
-                <div className="bg-white p-6 rounded-lg shadow-md">
-                    <h3 className="text-lg font-semibold mb-4">Status dos Imóveis</h3>
-                    <div className="space-y-4">
-                        <div>
-                            <div className="flex justify-between mb-1">
-                                <span className="text-gray-600">Taxa de Ocupação</span>
-                                <span className="font-medium">{stats.realEstate.occupancyRate.toFixed(1)}%</span>
-                            </div>
-                            <div className="w-full bg-gray-200 rounded-full h-2">
-                                <div
-                                    className="bg-myPrimary rounded-full h-2 transition-all duration-500"
-                                    style={{ width: `${stats.realEstate.occupancyRate}%` }}
-                                ></div>
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <span className="text-gray-600 block">Disponíveis</span>
-                                <span className="text-xl font-medium text-green-600">{stats.realEstate.available}</span>
-                            </div>
-                            <div>
-                                <span className="text-gray-600 block">Alugados</span>
-                                <span className="text-xl font-medium text-blue-600">{stats.realEstate.leased}</span>
-                            </div>
-                            <div>
-                                <span className="text-gray-600 block">Vendidos</span>
-                                <span className="text-xl font-medium text-purple-600">{stats.realEstate.sold}</span>
-                            </div>
-                            <div>
-                                <span className="text-gray-600 block">Em Manutenção</span>
-                                <span className="text-xl font-medium text-orange-600">{stats.realEstate.underMaintenance}</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            {/* Grid de Gráficos */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <LineChart
+                    data={contratosMensais}
+                    title="Contratos por Mês"
+                    color="#2563eb"
+                />
+                <LineChart
+                    data={receitaMensal}
+                    title="Receita Mensal"
+                    color="#059669"
+                />
             </div>
         </div>
     );
