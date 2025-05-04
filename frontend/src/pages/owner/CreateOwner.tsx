@@ -19,13 +19,14 @@ import { EMaritalStatus } from '../../models/Enums/EMaritalStatus';
 import { useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { createEmptyOwner, Owner } from '../../models/Owner';
-import { FileUpload } from "../../components/FileUpload";
+import { AttachmentsManager } from '../../components/AttachmentsManager';
 
 const OwnerRegistration = () => {
   const { user } = useAuth();
 
   const { id } = useParams<{ id?: string }>();
   const [ownerData, setOwnerData] = useState<Owner>(createEmptyOwner());
+  const [entityId, setEntityId] = useState<string | null>(id || null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -78,10 +79,15 @@ const OwnerRegistration = () => {
     { setSubmitting, resetForm }: any
   ) => {
     try {
-      id
-        ? await await updateOwner(id, values)
-        : await createOwner({ userId: user?.uid || '', ...values });
-      toast.success('Proprietário salvo com sucesso!');
+      if (id) {
+        await updateOwner(id, values);
+        toast.success('Proprietário atualizado com sucesso!');
+        setEntityId(id);
+      } else {
+        const newId = await createOwner({ userId: user?.uid || '', ...values });
+        toast.success('Proprietário criado com sucesso!');
+        setEntityId(newId);
+      }
       resetForm();
     } catch (error) {
       console.error('Erro ao cadastrar proprietário:', error);
@@ -95,7 +101,7 @@ const OwnerRegistration = () => {
     <div className="p-4">
       <div className="bg-white p-8 rounded shadow-md w-4/5 mx-auto">
         <h2 className="text-2xl font-semibold mb-4 text-center">
-          Cadastro de Proprietário
+          {id ? "Editar Proprietário" : "Cadastro de Proprietário"}
         </h2>
         <Formik
           initialValues={ownerData}
@@ -240,18 +246,11 @@ const OwnerRegistration = () => {
           )}
         </Formik>
         <ToastContainer position="top-right" autoClose={1500} />
-      </div>
-
-      <div className="mt-8">
-        <h2 className="text-lg font-semibold mb-4">Documentos</h2>
-        {ownerData.id && (
-          <FileUpload
-            entityType="owners"
-            entityId={ownerData.id}
-            onUploadComplete={(file) => {
-              toast.success('Documento enviado com sucesso!');
-            }}
-          />
+        {entityId && (
+          <div className="mt-8">
+            <h3 className="text-lg font-semibold mb-4">Documentos PDF</h3>
+            <AttachmentsManager entityType="owner" identifier={entityId} entityId={entityId} />
+          </div>
         )}
       </div>
     </div>

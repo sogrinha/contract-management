@@ -8,7 +8,7 @@ import {
 } from "firebase/firestore";
 import { Formik, Form } from "formik";
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import * as Yup from "yup";
@@ -21,8 +21,6 @@ import { RealEstate } from "../../models/RealEstate";
 import { Contract, EContractKind, EStatus } from "../../models/Contract";
 import { createContract, updateContract } from "../../services/contractService";
 import RoutesName from "../../routes/Routes";
-import { useNavigate } from "react-router-dom";
-import { FileUpload } from "../../components/FileUpload";
 
 interface SelectOption {
   value: string;
@@ -31,11 +29,12 @@ interface SelectOption {
 
 const CreateContract = () => {
   const { id } = useParams<{ id?: string }>();
+  const navigate = useNavigate();
+  const [entityId, setEntityId] = useState<string | null>(id || null);
   const [owners, setOwners] = useState<Owner[]>([]);
   const [lessees, setLessees] = useState<Lessee[]>([]);
   const [realEstates, setRealEstates] = useState<RealEstate[]>([]);
   const [identifier, setIdentifier] = useState<string | null>(null);
-  const navigate = useNavigate();
 
   const [selectedKind, setSelectedKind] = useState<SelectOption | null>(null);
   const [selectedStatus, setSelectedStatus] = useState<SelectOption | null>(
@@ -206,12 +205,14 @@ const CreateContract = () => {
       if (id) {
         await updateContract(id, cleanedContract);
         toast.success("Contrato atualizado com sucesso!");
+        setEntityId(id);
       } else {
-        await createContract(cleanedContract as Contract);
+        const docRef = await createContract(cleanedContract as Contract);
         toast.success("Contrato criado com sucesso!");
-        resetForm();
+        navigate(`${RoutesName.CONTRACT}/${docRef.id}`);
+        return;
       }
-
+      resetForm();
       navigate(RoutesName.CONTRACTS);
     } catch (err) {
       console.error(err);
@@ -227,7 +228,6 @@ const CreateContract = () => {
         <h2 className="text-2xl font-semibold mb-4 text-center">
           {id ? "Editar Contrato" : "Cadastro de Contrato"}
         </h2>
-
         <Formik
           initialValues={{
             userId: "",
@@ -376,19 +376,6 @@ const CreateContract = () => {
           )}
         </Formik>
         <ToastContainer position="top-right" autoClose={1500} />
-
-        <div className="mt-8">
-          <h2 className="text-lg font-semibold mb-4">Documentos</h2>
-          {id && (
-            <FileUpload
-              entityType="contracts"
-              entityId={id}
-              onUploadComplete={(file) => {
-                toast.success('Documento enviado com sucesso!');
-              }}
-            />
-          )}
-        </div>
       </div>
     </div>
   );

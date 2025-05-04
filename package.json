@@ -1,19 +1,49 @@
 {
-  "name": "contract-management",
+  "name": "sogrinha-desktop",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Aplicativo desktop para gestão imobiliária",
+  "main": "electron.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "cd frontend && npm start",
+    "build": "cd frontend && npm run build",
+    "test": "cd frontend && npm test",
+    "electron-dev": "set NODE_ENV=development && concurrently \"npm start\" \"wait-on http://localhost:3000 && electron .\"",
+    "electron-pack": "npm run build && electron-builder build --win",
+    "postinstall": "cd frontend && npm install"
+  },
+  "build": {
+    "appId": "com.sogrinha.app",
+    "productName": "Sogrinha",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "frontend/build/**/*",
+      "electron.js",
+      "preload.js",
+      "node_modules/**/*"
+    ],
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "frontend/public/sogrinha_logo.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
   "dependencies": {
     "@types/node": "^22.13.5",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
+    "dotenv": "^16.5.0",
     "electron": "^34.2.0",
     "firebase": "^11.3.1",
     "react": "^19.0.0",
@@ -25,7 +55,10 @@
     "typescript": "^5.7.3"
   },
   "devDependencies": {
+    "concurrently": "^8.2.2",
+    "electron-builder": "^24.9.1",
     "eslint": "^9.21.0",
-    "prettier": "^3.5.2"
+    "prettier": "^3.5.2",
+    "wait-on": "^7.2.0"
   }
 }

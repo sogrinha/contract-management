@@ -8,7 +8,7 @@ import {
 } from "firebase/firestore";
 import { ErrorMessage, Field, Form, Formik } from "formik";
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import * as Yup from "yup";
@@ -28,7 +28,8 @@ import {
   getRealEstateById,
   updateRealEstate,
 } from "../../services/realEstateService";
-import { FileUpload } from "../../components/FileUpload";
+import RoutesName from "../../routes/Routes";
+import { AttachmentsManager } from '../../components/AttachmentsManager';
 
 interface SelectOption {
   value: string;
@@ -37,7 +38,9 @@ interface SelectOption {
 
 const CreateRealEstate = () => {
   const { id } = useParams<{ id?: string }>();
+  const navigate = useNavigate();
   const [realEstateData, setRealEstateData] = useState<RealEstate>();
+  const [entityId, setEntityId] = useState<string | null>(id || null);
   const [owners, setOwners] = useState<Owner[]>([]);
   const [lessees, setLessees] = useState<Lessee[]>([]);
   const [selectedInspection, setSelectedInspection] =
@@ -213,10 +216,14 @@ const CreateRealEstate = () => {
 
       if (id) {
         await updateRealEstate(id, realEstate);
+        toast.success("Imóvel atualizado com sucesso!");
       } else {
-        await createRealEstate(realEstate);
+        const docRef = await createRealEstate(realEstate);
+        toast.success("Imóvel salvo com sucesso!");
+        navigate(`${RoutesName.REAL_ESTATE}/${docRef.id}`);
+        return;
       }
-      toast.success("Imóvel salvo com sucesso!");
+      setEntityId(id);
       resetForm();
     } catch (error) {
       console.error("Erro ao cadastrar imóvel:", error);
@@ -420,18 +427,11 @@ const CreateRealEstate = () => {
           )}
         </Formik>
         <ToastContainer position="top-right" autoClose={1500} />
-      </div>
-
-      <div className="mt-8">
-        <h2 className="text-lg font-semibold mb-4">Documentos</h2>
-        {realEstateData?.id && (
-          <FileUpload
-            entityType="realEstates"
-            entityId={realEstateData.id}
-            onUploadComplete={(file) => {
-              toast.success('Documento enviado com sucesso!');
-            }}
-          />
+        {entityId && (
+          <div className="mt-8">
+            <h3 className="text-lg font-semibold mb-4">Documentos PDF</h3>
+            <AttachmentsManager entityType="real_estate" identifier={entityId} entityId={entityId} />
+          </div>
         )}
       </div>
     </div>

@@ -16,16 +16,19 @@ import { MyCEPInput } from "../../components/inputs/InputCep";
 import { FormField } from "../../components/FormField";
 import SelectField from "../../components/SelectField";
 import { EMaritalStatus } from "../../models/Enums/EMaritalStatus";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { createEmptyLessee, Lessee } from "../../models/Lessee";
-import { FileUpload } from "../../components/FileUpload";
+import RoutesName from "../../routes/Routes";
+import { AttachmentsManager } from '../../components/AttachmentsManager';
 
 const LesseeRegistration = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const { id } = useParams<{ id?: string }>();
   const [lesseeData, setLesseeData] = useState<Lessee>(createEmptyLessee());
+  const [entityId, setEntityId] = useState<string | null>(id || null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -76,10 +79,17 @@ const LesseeRegistration = () => {
     { setSubmitting, resetForm }: any
   ) => {
     try {
-      id
-        ? await await updateLessee(id, values)
-        : await createLessee({ userId: user?.uid || "", ...values });
-      toast.success("Locatário salvo com sucesso!");
+      if (id) {
+        await updateLessee(id, values);
+        toast.success("Locatário atualizado com sucesso!");
+        setEntityId(id);
+      } else {
+        const newId = await createLessee({ userId: user?.uid || "", ...values });
+        toast.success("Locatário criado com sucesso!");
+        navigate(`${RoutesName.LESSEE}/${newId}`);
+        setEntityId(newId);
+      }
+
       resetForm();
     } catch (error) {
       console.error("Erro ao cadastrar locatário:", error);
@@ -93,7 +103,7 @@ const LesseeRegistration = () => {
     <div className="p-4">
       <div className="bg-white p-8 rounded shadow-md w-4/5 mx-auto">
         <h2 className="text-2xl font-semibold mb-4 text-center">
-          Cadastro de Locatário
+          {id ? "Editar Locatário" : "Cadastro de Locatário"}
         </h2>
         <Formik
           initialValues={lesseeData}
@@ -150,7 +160,7 @@ const LesseeRegistration = () => {
                 <FormField label="Número" name="number" />
                 <FormField label="Complemento" name="complement" />
               </div>
-              <div className="grid grid-cols-1">
+              <div className="grid grid-1">
                 <FormField
                   label="Observação"
                   name="note"
@@ -238,17 +248,11 @@ const LesseeRegistration = () => {
           )}
         </Formik>
         <ToastContainer position="top-right" autoClose={1500} />
-      </div>
-      <div className="mt-8">
-        <h2 className="text-lg font-semibold mb-4">Documentos</h2>
-        {lesseeData.id && (
-          <FileUpload
-            entityType="lessees"
-            entityId={lesseeData.id}
-            onUploadComplete={(file) => {
-              toast.success('Documento enviado com sucesso!');
-            }}
-          />
+        {entityId && (
+          <div className="mt-8">
+            <h3 className="text-lg font-semibold mb-4">Documentos PDF</h3>
+            <AttachmentsManager entityType="lessee" identifier={lesseeData.cpf} entityId={entityId} />
+          </div>
         )}
       </div>
     </div>
